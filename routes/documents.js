@@ -760,7 +760,7 @@ router.get('/:id/view', async (req, res) => {
       logger.warn(`View PDF blocked: Invalid fileType '${document.fileType}' for doc ${document._id}`);
       return res.status(400).json({
         success: false,
-        message: 'This route is only for PDF documents',
+        message: 'Sorry this is an png file. pdf files can only be viewed in this method',
       });
     }
 
