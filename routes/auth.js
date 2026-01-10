@@ -83,6 +83,11 @@ router.post(
   }
 );
 
+// @route   PUT /auth/change-password
+// @desc    Change user password
+// @access  Private
+
+
 // @route   POST /loginWithEmail
 // @desc    Authenticate user and get token
 // @access  Public
