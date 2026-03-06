@@ -31,6 +31,8 @@ dotenv.config({ path: join(__dirname, '.env') });
 const requiredEnvVars = {
   'MONGODB_URI': process.env.MONGODB_URI,
   'JWT_SECRET': process.env.JWT_SECRET,
+  'EMAIL_USER': process.env.EMAIL_USER, // Add email user
+  'EMAIL_PASSWORD': process.env.EMAIL_PASSWORD, // Add email password
 };
 
 const missingVars = Object.entries(requiredEnvVars)
@@ -50,20 +52,37 @@ const app = express();
 app.use(helmet());
 
 // CORS configuration
+const allowedOrigins = [
+  'http://localhost:8080',
+  'https://cloudvault-eight.vercel.app',
+  'https://digivault-iota.vercel.app'
+];
+
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:8080',
+    origin: function (origin, callback) {
+      // allow requests with no origin (Postman, curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error(`CORS blocked: ${origin}`));
+      }
+    },
     credentials: true,
   })
 );
 
-// Rate limiting
-const limiter = rateLimit({
+// Rate limiting - Create different limiters for different routes
+const globalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: 'Too many requests from this IP, please try again later.',
 });
-app.use('/api/', limiter);
+
+
+// Apply global rate limiting to all API routes
+app.use('/api/', globalLimiter);
 
 // Body parser middleware
 app.use(express.json());
@@ -85,6 +104,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // Routes
 app.use('/auth', authRoutes);
+
+
 
 // Login route at root level for frontend compatibility
 app.post(
@@ -150,6 +171,7 @@ app.post(
   }
 );
 
+// API routes
 app.use('/api/documents', documentRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/activities', activityRoutes);
@@ -179,7 +201,11 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+ 
+  logger.info(`- POST /forgot-password`);
+  logger.info(`- POST /verify-otp`);
+  logger.info(`- POST /reset-password`);
+  logger.info(`- POST /resend-otp`);
 });
 
 export default app;
-
