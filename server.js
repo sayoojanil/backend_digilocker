@@ -54,8 +54,7 @@ app.use(helmet());
 // CORS configuration
 const allowedOrigins = [
   'http://localhost:8080',
-  'https://cloudvault-eight.vercel.app',
-  'https://digivault-iota.vercel.app'
+  'https://cloudvaultsafe.vercel.app'
 ];
 
 app.use(
