@@ -25,29 +25,21 @@ router.use(protect);
 router.get(
   '/',
   [
-    query('category').optional().isIn([
-      'identity',
-      'financial',
-      'medical',
-      'insurance',
-      'legal',
-      'personal',
-      'travel',
-      'other',
-    ]),
+    query('category').optional().isString(),
     query('favorite').optional().isBoolean(),
     query('archived').optional().isBoolean(),
     query('search').optional().isString(),
   ],
   async (req, res) => {
     try {
-      const { category, favorite, archived, search } = req.query;
+      const { category, favorite, archived, search, folder } = req.query;
       const query = { userId: req.user.id };
 
       if (category) query.category = category;
       if (favorite === 'true') query.isFavorite = true;
       if (archived === 'true') query.isArchived = true;
       else if (archived !== 'true') query.isArchived = false;
+      if (folder !== undefined) query.folder = folder;
 
       let documents = await Document.find(query).sort({ createdAt: -1 });
 
@@ -126,16 +118,7 @@ router.post(
     body('name').optional().trim(),
     body('category')
       .optional()
-      .isIn([
-        'identity',
-        'financial',
-        'medical',
-        'insurance',
-        'legal',
-        'personal',
-        'travel',
-        'other',
-      ])
+      .isString()
       .withMessage('Invalid category'),
     body('type')
       .optional()
@@ -315,6 +298,7 @@ router.post(
       const documentName = (req.body.name && req.body.name.trim()) || req.file.originalname || `Document-${Date.now()}`;
       const documentType = req.body.type || (fileType === 'pdf' ? 'pdf' : 'image');
       const documentCategory = req.body.category || 'other';
+      const documentFolder = (req.body.folder && req.body.folder.trim()) || '';
 
       // Parse tags and metadata safely
       let tags = [];
@@ -355,6 +339,7 @@ router.post(
         thumbnailUrl: thumbnailUrl,
         isArchived: false,
         isFavorite: false,
+        folder: documentFolder,
       });
 
       // Update user storage
@@ -424,16 +409,7 @@ router.put(
     body('name').optional().trim().notEmpty(),
     body('category')
       .optional()
-      .isIn([
-        'identity',
-        'financial',
-        'medical',
-        'insurance',
-        'legal',
-        'personal',
-        'travel',
-        'other',
-      ]),
+      .isString(),
   ],
   async (req, res) => {
     logger.info(`PUT /api/documents/${req.params.id} hit`);
@@ -473,6 +449,7 @@ router.put(
       if (req.body.metadata) updateData.metadata = req.body.metadata;
       if (req.body.isArchived !== undefined) updateData.isArchived = req.body.isArchived;
       if (req.body.isFavorite !== undefined) updateData.isFavorite = req.body.isFavorite;
+      if (req.body.folder !== undefined) updateData.folder = req.body.folder;
 
       document = await Document.findByIdAndUpdate(
         req.params.id,

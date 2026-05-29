@@ -20,20 +20,11 @@ router.get('/', async (req, res) => {
       isArchived: false,
     });
 
-    const categoryBreakdown = {
-      identity: 0,
-      financial: 0,
-      medical: 0,
-      insurance: 0,
-      legal: 0,
-      personal: 0,
-      travel: 0,
-      other: 0,
-    };
+    const categoryBreakdown = {};
 
     documents.forEach((doc) => {
-      categoryBreakdown[doc.category] =
-        (categoryBreakdown[doc.category] || 0) + 1;
+      const cat = doc.category || 'other';
+      categoryBreakdown[cat] = (categoryBreakdown[cat] || 0) + 1;
     });
 
     const stats = {

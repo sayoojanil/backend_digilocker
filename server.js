@@ -20,6 +20,7 @@ import documentRoutes from './routes/documents.js';
 import userRoutes from './routes/user.js';
 import activityRoutes from './routes/activities.js';
 import statsRoutes from './routes/stats.js';
+import categoryRoutes from './routes/categories.js';
 import { body, validationResult } from 'express-validator';
 import User from './models/User.js';
 import { generateToken } from './utils/generateToken.js';
@@ -175,6 +176,7 @@ app.use('/api/documents', documentRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/categories', categoryRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {

@@ -39,17 +39,8 @@ const documentSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: [
-        'identity',
-        'financial',
-        'medical',
-        'insurance',
-        'legal',
-        'personal',
-        'travel',
-        'other',
-      ],
       required: true,
+      trim: true,
     },
     fileType: {
       type: String,
@@ -97,6 +88,12 @@ const documentSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+    folder: {
+      type: String,
+      default: '',
+      trim: true,
+      index: true,
+    },
   },
   {
     timestamps: true,
@@ -108,6 +105,7 @@ documentSchema.index({ userId: 1, isArchived: 1 });
 documentSchema.index({ userId: 1, category: 1 });
 documentSchema.index({ userId: 1, isFavorite: 1 });
 documentSchema.index({ userId: 1, createdAt: -1 });
+documentSchema.index({ userId: 1, folder: 1 });
 
 const Document = mongoose.model('Document', documentSchema);
 
