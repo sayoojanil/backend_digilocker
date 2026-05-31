@@ -4,6 +4,8 @@ import User from '../models/User.js';
 import { protect } from '../middleware/auth.js';
 import logger from '../config/logger.js';
 
+import { upload, deleteFromCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
+
 const router = express.Router();
 
 // All routes require authentication
@@ -22,9 +24,11 @@ router.get('/profile', async (req, res) => {
         name: user.name,
         email: user.email,
         avatar: user.avatar,
+        avatarPublicId: user.avatarPublicId,
         storageUsed: user.storageUsed,
         storageLimit: user.storageLimit,
         isGuest: user.isGuest,
+        isAdmin: user.isAdmin || false,
         createdAt: user.createdAt,
       },
     });
@@ -59,6 +63,11 @@ router.put(
       const updateData = {};
       if (req.body.name) updateData.name = req.body.name;
       if (req.body.avatar !== undefined) updateData.avatar = req.body.avatar;
+      if (req.body.phone) updateData.phone = req.body.phone;
+      if (req.body.gender) updateData.gender = req.body.gender;
+      if (req.body.dob) updateData.dob = req.body.dob;
+
+
 
       const user = await User.findByIdAndUpdate(
         req.user.id,
@@ -73,10 +82,15 @@ router.put(
           name: user.name,
           email: user.email,
           avatar: user.avatar,
+          avatarPublicId: user.avatarPublicId,
           storageUsed: user.storageUsed,
           storageLimit: user.storageLimit,
           isGuest: user.isGuest,
+          isAdmin: user.isAdmin || false,
           createdAt: user.createdAt,
+          phone: user.phone,
+          gender: user.gender,
+          dob: user.dob,
         },
       });
     } catch (error) {
@@ -88,6 +102,146 @@ router.put(
     }
   }
 );
+
+// @route   POST /api/user/avatar
+// @desc    Upload/Update user profile picture (avatar)
+// @access  Private
+router.post('/avatar', upload.single('avatar'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+      });
+    }
+
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    // Delete existing avatar from storage if it exists to avoid leakage
+    if (user.avatarPublicId) {
+      try {
+        await deleteFromCloudinary(user.avatarPublicId, 'image');
+      } catch (deleteError) {
+        logger.error(`Failed to delete old avatar ${user.avatarPublicId}: ${deleteError.message}`);
+      }
+    }
+
+    let avatarUrl, avatarPublicId;
+
+    if (isCloudinaryConfigured()) {
+      avatarUrl = req.file.secure_url || req.file.url || req.file.path;
+      avatarPublicId = req.file.public_id || req.file.filename;
+    } else {
+      const fileName = req.file.filename;
+      const userId = user._id.toString();
+      avatarUrl = `${req.protocol}://${req.get('host')}/uploads/${userId}/${fileName}`;
+      avatarPublicId = `${userId}/${fileName}`;
+    }
+
+    user.avatar = avatarUrl;
+    user.avatarPublicId = avatarPublicId;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile picture updated successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: user.avatar,
+        avatarPublicId: user.avatarPublicId,
+        storageUsed: user.storageUsed,
+        storageLimit: user.storageLimit,
+        isGuest: user.isGuest,
+        isAdmin: user.isAdmin || false,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    logger.error(`Upload avatar error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error uploading profile picture',
+    });
+  }
+});
+
+// @route   DELETE /api/user/avatar
+// @desc    Delete/Remove user profile picture (avatar)
+// @access  Private
+router.delete('/avatar', async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    if (!user.avatar && !user.avatarPublicId) {
+      return res.json({
+        success: true,
+        message: 'No avatar to remove',
+        data: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          avatar: null,
+          avatarPublicId: null,
+          storageUsed: user.storageUsed,
+          storageLimit: user.storageLimit,
+          isGuest: user.isGuest,
+          isAdmin: user.isAdmin || false,
+          createdAt: user.createdAt,
+        },
+      });
+    }
+
+    // Delete from storage if avatarPublicId exists
+    if (user.avatarPublicId) {
+      try {
+        await deleteFromCloudinary(user.avatarPublicId, 'image');
+      } catch (deleteError) {
+        logger.error(`Failed to delete avatar from storage ${user.avatarPublicId}: ${deleteError.message}`);
+      }
+    }
+
+    user.avatar = null;
+    user.avatarPublicId = null;
+    await user.save();
+
+    res.json({
+      success: true,
+      message: 'Profile picture removed successfully',
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        avatar: null,
+        avatarPublicId: null,
+        storageUsed: user.storageUsed,
+        storageLimit: user.storageLimit,
+        isGuest: user.isGuest,
+        isAdmin: user.isAdmin || false,
+        createdAt: user.createdAt,
+      },
+    });
+  } catch (error) {
+    logger.error(`Delete avatar error: ${error.message}`);
+    res.status(500).json({
+      success: false,
+      message: 'Error removing profile picture',
+    });
+  }
+});
 
 export default router;
 

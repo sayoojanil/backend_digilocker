@@ -94,6 +94,12 @@ const documentSchema = new mongoose.Schema(
       trim: true,
       index: true,
     },
+    verificationStatus: {
+      type: String,
+      enum: ['pending', 'verification_sent', 'verified'],
+      default: 'pending',
+      index: true,
+    },
   },
   {
     timestamps: true,

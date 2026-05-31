@@ -52,7 +52,7 @@ router.post(
 
       res.status(201).json({
         success: true,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.isAdmin),
         user: {
           id: user._id.toString(),
           name: user.name,
@@ -61,6 +61,7 @@ router.post(
           storageUsed: user.storageUsed || 0,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
+          isAdmin: user.isAdmin || false,
           createdAt: user.createdAt,
         },
       });
@@ -133,7 +134,7 @@ router.post(
 
       res.json({
         success: true,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.isAdmin),
         user: {
           id: user._id.toString(),
           name: user.name,
@@ -142,6 +143,7 @@ router.post(
           storageUsed: user.storageUsed || 0,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
+          isAdmin: user.isAdmin || false,
           createdAt: user.createdAt,
         },
       });

@@ -29,6 +29,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    avatarPublicId: {
+      type: String,
+      default: null,
+    },
     storageUsed: {
       type: Number,
       default: 0,
@@ -37,9 +41,23 @@ const userSchema = new mongoose.Schema(
       type: Number,
       default: 1073741824, // 1GB in bytes
     },
-    isGuest: {
+    phone: {
+      type: String,
+      default: ''
+    },
+    gender: {
+      type: String,
+      enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+      default: 'Prefer not to say'
+    },
+    dob: {
+      type: Date,
+      default: null
+    },
+    isAdmin: {
       type: Boolean,
       default: false,
+      index: true,
     },
   },
   {

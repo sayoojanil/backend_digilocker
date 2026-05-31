@@ -21,6 +21,7 @@ import userRoutes from './routes/user.js';
 import activityRoutes from './routes/activities.js';
 import statsRoutes from './routes/stats.js';
 import categoryRoutes from './routes/categories.js';
+import adminRoutes from './routes/admin.js';
 import { body, validationResult } from 'express-validator';
 import User from './models/User.js';
 import { generateToken } from './utils/generateToken.js';
@@ -149,7 +150,7 @@ app.post(
 
       res.json({
         success: true,
-        token: generateToken(user._id),
+        token: generateToken(user._id, user.isAdmin),
         user: {
           id: user._id.toString(),
           name: user.name,
@@ -158,6 +159,7 @@ app.post(
           storageUsed: user.storageUsed || 0,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
+          isAdmin: user.isAdmin || false,
           createdAt: user.createdAt,
         },
       });
@@ -177,6 +179,7 @@ app.use('/api/user', userRoutes);
 app.use('/api/activities', activityRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
@@ -198,15 +201,17 @@ app.use((req, res) => {
 // Error handler middleware (must be last)
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
-app.listen(PORT, () => {
-  logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
- 
-  logger.info(`- POST /forgot-password`);
-  logger.info(`- POST /verify-otp`);
-  logger.info(`- POST /reset-password`);
-  logger.info(`- POST /resend-otp`);
-});
+// Start the server only when not in Vercel's serverless environment
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    logger.info(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+    logger.info(`- POST /forgot-password`);
+    logger.info(`- POST /verify-otp`);
+    logger.info(`- POST /reset-password`);
+    logger.info(`- POST /re...`);
+  });
+}
 
 export default app;

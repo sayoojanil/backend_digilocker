@@ -256,6 +256,105 @@ Authorization: Bearer <token>
 
 ---
 
+### Admin Dashboard (Privileged)
+
+All `/api/admin` routes require an authentication token from a user where `isAdmin` is set to `true`.
+
+#### Get All Users
+```http
+GET /api/admin/users
+Authorization: Bearer <admin-token>
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "user-id",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "avatar": null,
+      "storageUsed": 262144,
+      "storageLimit": 1073741824,
+      "isGuest": false,
+      "isAdmin": false,
+      "createdAt": "2024-02-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+#### Get User Details and Documents
+```http
+GET /api/admin/users/:id
+Authorization: Bearer <admin-token>
+```
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": "user-id",
+      "name": "Jane Doe",
+      "email": "jane@example.com",
+      "avatar": null,
+      "storageUsed": 262144,
+      "storageLimit": 1073741824,
+      "isGuest": false,
+      "isAdmin": false,
+      "createdAt": "2024-02-01T00:00:00.000Z"
+    },
+    "documents": [
+      {
+        "id": "doc-id",
+        "name": "Tax_Form_1099.pdf",
+        "type": "pdf",
+        "category": "financial",
+        "fileType": "pdf",
+        "size": 262144,
+        "tags": ["taxes", "1099"],
+        "metadata": {},
+        "thumbnailUrl": null,
+        "fileUrl": "https://res.cloudinary.com/...",
+        "isArchived": false,
+        "isFavorite": false,
+        "folder": "Taxes/2023",
+        "verificationStatus": "pending",
+        "createdAt": "2024-02-02T10:00:00.000Z"
+      }
+    ]
+  }
+}
+```
+
+#### Update Document Verification Status
+```http
+PATCH /api/admin/documents/:id/status
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "status": "verified"
+}
+```
+**Options for status:** `pending`, `verification_sent`, `verified`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Document verification status updated successfully",
+  "data": {
+    "id": "doc-id",
+    "verificationStatus": "verified"
+  }
+}
+```
+
+---
+
 ## Error Responses
 
 All errors follow this format:
