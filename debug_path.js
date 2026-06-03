@@ -9,7 +9,11 @@ const routesDir = path.join(__dirname, 'routes');
 console.log('__dirname (backend):', __dirname);
 
 const userId = '695d4efc86d684caa65b3840';
-const fileUrl = 'http://localhost:5000/uploads/695d4efc86d684caa65b3840/file-1767726485325-241446355.pdf';
+// const fileUrl = 'http://localhost:5000/uploads/695d4efc86d684caa65b3840/file-1767726485325-241446355.pdf';
+
+
+const fileUrl = 'https://backend-digilocker.vercel.app/uploads/695d4efc86d684caa65b3840/file-1767726485325-241446355.pdf';
+
 
 const basename = path.basename(fileUrl);
 console.log('Basename:', basename);
