@@ -33,6 +33,14 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    adharImage: {
+      type: String,
+      default: null,
+    },
+    adharImagePublicId: {
+      type: String,
+      default: null,
+    },
     storageUsed: {
       type: Number,
       default: 0,
@@ -47,7 +55,7 @@ const userSchema = new mongoose.Schema(
     },
     gender: {
       type: String,
-      enum: ['Male', 'Female', 'Other', 'Prefer not to say'],
+      enum: ['Male','MALE','FEMALE', 'Female', 'Other', 'Prefer not to say'],
       default: 'Prefer not to say'
     },
     dob: {

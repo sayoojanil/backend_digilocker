@@ -183,11 +183,22 @@ app.use('/api/admin', adminRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({
-    success: true,
-    message: 'Server is running',
-    timestamp: new Date().toISOString(),
-  });
+  res.send(`
+
+<html>
+
+
+
+
+
+ 
+  server is running..
+
+
+
+
+</html>
+  `);
 });
 
 // 404 handler

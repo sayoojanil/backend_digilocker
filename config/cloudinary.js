@@ -44,9 +44,10 @@ if (hasCloudinaryConfig) {
     storage = new CloudinaryStorage({
       cloudinary: cloudinary,
       params: async (req, file) => {
-        // Check if user is authenticated
-        if (!req.user || !req.user.id) {
-          throw new Error('User authentication required for file upload');
+        // Check if user is authenticated or has a pre-generated userId
+        const userId = req.user?.id || req.userId;
+        if (!userId) {
+          throw new Error('User authentication/identification required for file upload');
         }
 
         // Determine resource type based on file mimetype
@@ -58,7 +59,7 @@ if (hasCloudinaryConfig) {
         }
 
         return {
-          folder: `secure-vault/digiusers/${req.user.id}`, // Organize by user
+          folder: `secure-vault/digiusers/${userId}`, // Organize by user
           resource_type: resourceType,
           allowed_formats: ['jpg', 'jpeg', 'png', 'pdf', 'webp', 'gif'],
           public_id: `${Date.now()}-${Math.round(Math.random() * 1e9)}`,
@@ -87,7 +88,8 @@ function createLocalStorage() {
 
   return multer.diskStorage({
     destination: function (req, file, cb) {
-      const userDir = path.join(uploadDir, req.user?.id || 'default');
+      const userId = req.user?.id || req.userId || 'default';
+      const userDir = path.join(uploadDir, userId);
       if (!fs.existsSync(userDir)) {
         fs.mkdirSync(userDir, { recursive: true });
       }

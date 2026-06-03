@@ -1,8 +1,10 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
+import mongoose from 'mongoose';
 import User from '../models/User.js';
 import { generateToken } from '../utils/generateToken.js';
 import logger from '../config/logger.js';
+import { upload, deleteFromCloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
 
 const router = express.Router();
 
@@ -11,6 +13,12 @@ const router = express.Router();
 // @access  Public
 router.post(
   '/signup',
+  (req, res, next) => {
+    // Generate ObjectId for the user beforehand so the file upload path has access to the user ID folder
+    req.userId = new mongoose.Types.ObjectId().toString();
+    next();
+  },
+  upload.single('adharImage'),
   [
     body('name').trim().notEmpty().withMessage('Name is required'),
     body('email').isEmail().withMessage('Please provide a valid email'),
@@ -22,6 +30,21 @@ router.post(
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
+        // Clean up file if uploaded
+        if (req.file) {
+          const publicId = isCloudinaryConfigured()
+            ? req.file.public_id
+            : `${req.userId}/${req.file.filename}`;
+          const resourceType = isCloudinaryConfigured()
+            ? req.file.resource_type
+            : 'auto';
+          try {
+            await deleteFromCloudinary(publicId, resourceType);
+          } catch (deleteError) {
+            logger.error(`Error deleting file on validation failure: ${deleteError.message}`);
+          }
+        }
+
         const errorMessages = errors.array().map(err => err.msg).join(', ');
         return res.status(400).json({
           success: false,
@@ -35,17 +58,51 @@ router.post(
       // Check if user already exists
       const userExists = await User.findOne({ email });
       if (userExists) {
+        // Clean up file if uploaded
+        if (req.file) {
+          const publicId = isCloudinaryConfigured()
+            ? req.file.public_id
+            : `${req.userId}/${req.file.filename}`;
+          const resourceType = isCloudinaryConfigured()
+            ? req.file.resource_type
+            : 'auto';
+          try {
+            await deleteFromCloudinary(publicId, resourceType);
+          } catch (deleteError) {
+            logger.error(`Error deleting file on duplicate user: ${deleteError.message}`);
+          }
+        }
+
         return res.status(400).json({
           success: false,
           message: 'User already exists',
         });
       }
 
+      // Determine Aadhar image URL and public ID
+      let adharImageUrl = null;
+      let adharImagePublicId = null;
+
+      if (req.file) {
+        if (isCloudinaryConfigured()) {
+          adharImageUrl = req.file.secure_url || req.file.url || req.file.path;
+          adharImagePublicId = req.file.public_id || req.file.filename;
+        } else {
+          const fileName = req.file.filename;
+          const userId = req.userId;
+          adharImageUrl = `${req.protocol}://${req.get('host')}/uploads/${userId}/${fileName}`;
+          adharImagePublicId = `${userId}/${fileName}`;
+        }
+      }
+
       // Create user
       const user = await User.create({
+        _id: req.userId,
         name,
         email,
         password,
+        adharImage: adharImageUrl,
+        adharImagePublicId: adharImagePublicId,
       });
 
       logger.info(`New user registered: ${user.email}`);
@@ -58,6 +115,8 @@ router.post(
           name: user.name,
           email: user.email,
           avatar: user.avatar || null,
+          adharImage: user.adharImage || null,
+          adharImagePublicId: user.adharImagePublicId || null,
           storageUsed: user.storageUsed || 0,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
@@ -67,6 +126,21 @@ router.post(
       });
     } catch (error) {
       logger.error(`Signup error: ${error.message}`);
+      
+      // Clean up file if uploaded
+      if (req.file) {
+        try {
+          const publicId = isCloudinaryConfigured()
+            ? req.file.public_id
+            : `${req.userId}/${req.file.filename}`;
+          const resourceType = isCloudinaryConfigured()
+            ? req.file.resource_type
+            : 'auto';
+          await deleteFromCloudinary(publicId, resourceType);
+        } catch (deleteError) {
+          logger.error(`Error deleting file after signup failure: ${deleteError.message}`);
+        }
+      }
       
       // Handle duplicate email error
       if (error.code === 11000 || error.message.includes('duplicate')) {
@@ -140,10 +214,15 @@ router.post(
           name: user.name,
           email: user.email,
           avatar: user.avatar || null,
+          adharImage: user.adharImage || null,
+          adharImagePublicId: user.adharImagePublicId || null,
           storageUsed: user.storageUsed || 0,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
           isAdmin: user.isAdmin || false,
+          phone: user.phone || '',
+          gender: user.gender || '',
+          dob: user.dob || null,
           createdAt: user.createdAt,
         },
       });
