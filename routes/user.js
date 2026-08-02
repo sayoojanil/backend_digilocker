@@ -26,6 +26,7 @@ router.get('/profile', async (req, res) => {
         avatar: user.avatar,
         avatarPublicId: user.avatarPublicId,
         storageUsed: user.storageUsed,
+         adharImage: user.adharImage,
         storageLimit: user.storageLimit,
         isGuest: user.isGuest,
         isAdmin: user.isAdmin || false,

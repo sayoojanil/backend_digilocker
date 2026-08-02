@@ -157,6 +157,7 @@ app.post(
           email: user.email,
           avatar: user.avatar || null,
           storageUsed: user.storageUsed || 0,
+          adharImage: user.adharImage || null,
           storageLimit: user.storageLimit || 1073741824,
           isGuest: user.isGuest || false,
           isAdmin: user.isAdmin || false,
